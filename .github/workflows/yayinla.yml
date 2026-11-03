@@ -39,6 +39,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
   apk:
+    needs: site   # önce site yayınlanır, APK onun adresine bağlanır
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
