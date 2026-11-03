@@ -52,7 +52,7 @@ jobs:
           java-version: 17
       - name: Capacitor projesi
         run: |
-          mkdir -p www && cp -r index.html cards.js js bulgurs www/
+          mkdir -p www && cp -r index.html cards.js js bulgurs icons manifest.webmanifest sw.js www/
           npm install --no-audit --no-fund @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
           OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           REPO="${{ github.event.repository.name }}"
@@ -69,6 +69,10 @@ jobs:
           }
           EOF
           npx cap add android
+          # uygulama ikonu: oyunun logosu
+          RES=android/app/src/main/res
+          rm -f $RES/mipmap-anydpi-v26/*.xml $RES/mipmap-*/ic_launcher_foreground.png
+          for s in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do d=${s%%:*}; px=${s##*:}; for n in ic_launcher ic_launcher_round; do convert icons/icon-512.png -resize ${px}x${px} $RES/mipmap-$d/$n.png; done; done
           sed -i 's/<activity/<activity android:screenOrientation="portrait"/' android/app/src/main/AndroidManifest.xml
       - name: APK derle
         env:
