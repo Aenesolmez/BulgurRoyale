@@ -1,0 +1,91 @@
+# Her push'ta: oyunu GitHub Pages'te yayınlar + Android APK'yı yeniden üretip "latest" sürümüne koyar.
+# APK oyunu Pages adresinden açar; yani oyun güncellemeleri APK'yı yeniden kurmadan telefona gelir.
+# İmza: depo ayarlarında KEYSTORE_B64 (base64 .jks) ve KEYSTORE_PASS secret'ları varsa sabit anahtarla imzalanır
+# (yeni APK eskisinin üstüne kurulur); yoksa debug APK üretilir.
+name: Yayinla ve APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: yayin
+  cancel-in-progress: true
+
+jobs:
+  site:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Site dosyalarini topla
+        run: |
+          mkdir -p _site
+          cp -r index.html cards.js js bulgurs _site/
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Capacitor projesi
+        run: |
+          mkdir -p www && cp -r index.html cards.js js bulgurs www/
+          npm install --no-audit --no-fund @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          REPO="${{ github.event.repository.name }}"
+          cat > capacitor.config.json <<EOF
+          {
+            "appId": "com.bulgur.royale",
+            "appName": "Bulgur Royale",
+            "webDir": "www",
+            "server": { "url": "https://${OWNER}.github.io/${REPO}/", "errorPath": "index.html" },
+            "android": { "backgroundColor": "#0b2357" }
+          }
+          EOF
+          npx cap add android
+          sed -i 's/<activity/<activity android:screenOrientation="portrait"/' android/app/src/main/AndroidManifest.xml
+      - name: APK derle
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
+        run: |
+          cd android && chmod +x gradlew
+          if [ -n "$KEYSTORE_B64" ]; then
+            ./gradlew assembleRelease --no-daemon
+            echo "$KEYSTORE_B64" | base64 -d > ../ks.jks
+            BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+            $BT/zipalign -f 4 app/build/outputs/apk/release/app-release-unsigned.apk ../aligned.apk
+            $BT/apksigner sign --ks ../ks.jks --ks-pass env:KEYSTORE_PASS --key-pass env:KEYSTORE_PASS --out ../BulgurRoyale.apk ../aligned.apk
+            rm ../ks.jks
+          else
+            ./gradlew assembleDebug --no-daemon
+            cp app/build/outputs/apk/debug/app-debug.apk ../BulgurRoyale.apk
+          fi
+      - name: Surume koy (latest)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest -y --cleanup-tag || true
+          gh release create latest BulgurRoyale.apk --title "Bulgur Royale (son surum)" --notes "Otomatik derlendi: ${{ github.sha }}. Oyun icerigi internetten otomatik guncellenir."
