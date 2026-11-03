@@ -411,7 +411,7 @@ function startCardPreview(cv, id, evo, champ) {
         if (e.champ) drawChar(e.img, ex, ey - z, hh * 1.1, pose, { g, flip, tint: e.rageT > 0 ? '#ff9a1f' : '#ffd447', alpha: 0.55 });
         else if (e.evo) drawChar(e.img || e.card, ex, ey - z, hh * 1.08, pose, { g, flip, tint: '#c46bff', alpha: 0.55 });
         if (e.c && e.c.stand && mineU) drawChar(e.img || e.card, ex + (e.atkT > 0 ? hh * 0.4 : -hh * 0.3), ey - z - (e.atkT > 0 ? 0 : hh * 0.05), hh * (e.evo ? 1.25 : 1.12), e.atkT > 0 ? { lean: 0.2 } : {}, { g, flip, tint: e.evo ? '#7c3aed' : '#8e5bd6', alpha: 0.55 });
-        drawChar(e.card === 'mafya' && e.evo && e.atkT > 0 ? 'mafya_pose' : (e.img || e.card), ex, ey - z, hh, pose, { g, flip, tint, alpha: e.deployT > 0 ? 0.5 : 1 });
+        drawChar(e.card === 'mafya' && e.atkT > 0 ? 'mafya_pose' : (e.img || e.card), ex, ey - z, hh, pose, { g, flip, tint, alpha: e.deployT > 0 ? 0.5 : 1 });
       }
       const top = ey - z - hh;
       if (e.stun > 0 && !(e.freezeT > 0)) { g.fillStyle = '#ffe14d'; for (let i = 0; i < 3; i++) { const a = rs.anim * 6 + i * 2.1; star(g, ex + Math.cos(a) * hh * 0.22, top - 4 + Math.sin(a) * 3, 5, 2); g.fill(); } }

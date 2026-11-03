@@ -49,3 +49,6 @@ Eğlence amaçlı, ticari olmayan Clash Royale tarzı oyun. Tarayıcıda `index.
 ## 14
 - Pass Royale, kule görünümleri, şampiyon slotu (Şampiyon Bulgur + ulti), Esporcu zorluğu, Parti modları (1v1, 2v2 iki kral kulesi, Üçlü/Mega Çekiliş arenada, Çifte İksir), yeni çizimler (kazanlar kapaklı animasyonlu, oklava, gaz çarpması, fasulye), Ayva Büyüsü + yeni Ayva (armut atar).
 - İnsancıl botlar (fark etme gecikmesi), bot maçlarıyla kart dengesi, el kartında iksir dolum çubuğu, ilk maç ipuçları, kapalı modalda önizleme durur, yavaş cihazda efekt azaltma.
+
+## 15
+- Uzatma sonu: kuleler eşit hızda erir, ilk düşen kaybeder (geri sayım yok). Sağ üstte iksir çarpanı. Şampiyon butonu sola. Jojo evrimsiz de yumrukta poz. Müzik geçişleri yumuşak çapraz solma. Lobide parmağı takip eden sekme kaydırma. GitHub deposu + otomatik Pages/APK iş akışı.

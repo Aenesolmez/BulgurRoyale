@@ -225,15 +225,15 @@ function fadeTo(a, vol, ms, then) {
   const tick = () => { const k = Math.min(1, (performance.now() - t0) / ms); a.volume = clamp(v0 + (vol - v0) * k, 0, 1); if (k < 1) setTimeout(tick, 30); else if (then) then(); };
   tick();
 }
-function stopMusic() { synthStop(); if (curFile) { const old = curFile; fadeTo(old, 0, 400, () => old.pause()); } curFile = null; }
+function stopMusic() { synthStop(); if (curFile) { const old = curFile; fadeTo(old, 0, 1000, () => old.pause()); } curFile = null; }
 function setMusic(mode) {
   if (mode === 'battle30' && !hasFile('battle30')) mode = 'battle2x';   // 30 sn parçası yoksa 60 sn parçası devam eder
   const f = mode && musicOn ? fileFor(mode) : null;
   if (f) {
     synthStop();
     if (curFile !== f) {
-      const old = curFile; if (old) fadeTo(old, 0, 500, () => { if (old !== curFile) old.pause(); });
-      f.currentTime = 0; f.volume = 0; f.play().catch(() => {}); fadeTo(f, (FILE_VOL[mode] || 0.55) * VOL.music * VOL.main, 350);
+      const old = curFile; if (old) fadeTo(old, 0, 1400, () => { if (old !== curFile) old.pause(); });
+      f.currentTime = 0; f.volume = 0; f.play().catch(() => {}); fadeTo(f, (FILE_VOL[mode] || 0.55) * VOL.music * VOL.main, 1200);
     } else if (f.paused) { f.play().catch(() => {}); fadeTo(f, (FILE_VOL[mode] || 0.55) * VOL.music * VOL.main, 300); }
     curFile = f; musicMode = mode;
     f.playbackRate = mode === 'battle2x' && f === fileMus.battle ? 1.08 : 1;   // ayrı 60 sn parçası yoksa savaş müziği biraz hızlanır

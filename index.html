@@ -574,6 +574,10 @@
   .card[data-id="ayva"] img { object-position: center center; }
   #hand .card.cant::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: var(--fill, 0%); background: linear-gradient(#d985ff55, #b44cff88); border-top: 2px solid #f0c8ff; pointer-events: none; z-index: 2; transition: height .15s linear; }
   #hand .card.cant { filter: grayscale(.7) brightness(.75); }
+  #champBtn { top: calc(var(--u) * -70) !important; right: auto !important; left: calc(var(--u) * 8); }
+  #gasMul { position: absolute; right: calc(var(--u) * 10); top: calc(var(--u) * 92); z-index: 35; pointer-events: none; padding: calc(var(--u) * 2) calc(var(--u) * 8); border-radius: 99px; font-size: calc(var(--u) * 15); color: #fff; background: #0b2357cc; border: 2px solid #9ccc3c; }
+  #gasMul.r2 { border-color: #e05ad0; background: #6a1585cc; } #gasMul.r3 { border-color: #ff4141; background: #7a0000cc; } #gasMul.r0 { border-color: #fff; }
+  #gasMul.pop { animation: pop .5s; }
 </style>
 </head>
 <body>
@@ -608,7 +612,7 @@
   <div class="vsTxt">VS</div>
 </section>
 
-<section id="game" class="screen"><div id="cdNum" class="ts"></div>
+<section id="game" class="screen"><div id="cdNum" class="ts"></div><div id="gasMul" class="ts">💧 x1</div>
   <canvas id="cv"></canvas>
   <div id="gcol">
     <div id="gtop">

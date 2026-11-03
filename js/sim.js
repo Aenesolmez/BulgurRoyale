@@ -100,7 +100,7 @@ function canPlace(B, team, c, x, y) {
 function evoReady(P, id) { return P.evoIds.includes(id) && P.evoCharge[id] >= evoCycles(id); }
 
 function playCard(B, team, idx, x, y, PP) {
-  if (B.over) return false;
+  if (B.over || B.drain) return false;
   const P = PP || B.p[team], id = P.hand[idx], c = BY_ID[id];
   if (!c || P.elixir < c.cost) return false;
   if (c.type !== 'spell') { x = snap(x); y = snap(y); }
@@ -483,11 +483,18 @@ function stepBattle(B, dt) {
   B.time += dt;
   const prev = B.t; B.t -= dt;
   if (!B.ot && prev > 60 && B.t <= 60) emit(B, 'double');
+  if (B.drain) { /* iksir dolmaz */ } else {
   const rate = elixirRate(B);
   for (const P of B.px ? B.p.concat(B.px) : B.p) { const add = dt / 2.8 * rate; if (P.elixir >= 10) P.leaked += add; P.elixir = Math.min(10, P.elixir + add); }
+  }
   if (B.t <= 0) {
     if (!B.ot) { if (B.p[0].crowns === B.p[1].crowns) { B.ot = true; B.t = 60; emit(B, 'overtime'); } else return endBattle(B, B.p[0].crowns > B.p[1].crowns ? 0 : 1); }
-    else return tiebreak(B);
+    else if (!B.drain) { B.drain = true; B.t = 0; emit(B, 'drain'); }
+  }
+  if (B.drain) {   // Clash Royale gibi: birlikler durur, her kule saniyede aynı miktarda can kaybeder
+    B.t = 0; refresh(B); const loss = 260 * dt;
+    for (const t of B.ents) if (t.kind === 'tower' && t.hp > 0) { t.hp -= loss; if (t.hp <= 0 && !B.over) { emit(B, 'towerDown', { team: t.team, x: t.x, y: t.y, king: t.king }); return endBattle(B, 1 - t.team); } }
+    return;
   }
   refresh(B);
   for (const e of B.ents) { if (e.hp <= 0) continue; e.kind === 'tower' ? updateTower(B, e, dt) : updateUnit(B, e, dt); }

@@ -295,7 +295,7 @@ function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.a
 
 // ---------- Birimler ----------
 function drawUnit(e, B) {
-  const art = e.card === 'mafya' && e.evo && e.atkT > 0 ? 'mafya_pose' : (e.img || e.card);   // evrimli Jojo: ORA ORA anında Jojo pozu
+  const art = e.card === 'mafya' && e.atkT > 0 ? 'mafya_pose' : (e.img || e.card);   // evrimli Jojo: ORA ORA anında Jojo pozu
   const rs = rsOf(e.id), [X, Y, sc] = P(e.x, e.y), S = R.S, h = e.size * S * UNIT_SCALE * sc, type = rigOf(e.img || e.card).type;
   let z = e.flying ? 1.6 : (e.jz || 0);
   if (e.deployT > 0) { const k = e.deployT / (e.deployMax || 1); z += k * k * 5; }

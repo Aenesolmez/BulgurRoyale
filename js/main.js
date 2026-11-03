@@ -266,6 +266,7 @@ function gameEvents(evs) {
   for (const ev of evs) {
     if (ev.e === 'double') { banner('2x GAZ!', 'pink'); playMusic('battle2x'); }
     if (ev.e === 'overtime') { banner('UZATMA! 3x GAZ', 'red'); playMusic('battle2x'); }
+    if (ev.e === 'drain') { banner('KULELER ERİYOR!', 'red'); sfx('vs'); }
     if (ev.e === 'towerDown' && GAME.ai && !GAME.ended) setTimeout(() => GAME && botEmote(ev.team === GAME.me ? 'win' : 'lose'), 900);
   }
 }
@@ -280,9 +281,9 @@ function updateHud(B) {
     if (cu) { const A = cu.c.champ.abil, k = cu.abCd > 0 ? cu.abCd / A.cd : 0; $('champCd').style.height = (k * 100) + '%'; cb.classList.toggle('ready', k <= 0 && P.elixir >= A.cost); cb.classList.toggle('rage', cu.rageT > 0); } }
   $('gasBar').style.transform = `scaleX(${clamp(P.elixir / 10, 0, 1)})`;
   const gi = Math.floor(P.elixir); if (h.gas !== gi) { h.gas = gi; $('gasTxt').textContent = gi; }
-  const rate = B.ot ? 3 : B.t <= 60 ? 2 : 1; if (h.rate !== rate) { h.rate = rate; $('gasTrack').classList.toggle('x2', rate > 1); $('tbox').className = 'tbox ts' + (B.ot ? ' ot' : rate > 1 ? ' x2' : ''); $('tlabel').textContent = B.ot ? 'Uzatma' : rate > 1 ? '2x Gaz' : 'Kalan süre'; }
+  const rate = B.drain ? 0 : elixirRate(B); if (h.rate !== rate) { const gm = $('gasMul'); gm.textContent = rate ? '💧 x' + rate : '⏸'; gm.className = 'ts r' + rate; gm.classList.remove('pop'); void gm.offsetWidth; gm.classList.add('pop'); h.rate = rate; $('gasTrack').classList.toggle('x2', rate > 1); $('tbox').className = 'tbox ts' + (B.ot ? ' ot' : rate > 1 ? ' x2' : ''); $('tlabel').textContent = B.ot ? 'Uzatma' : rate > 1 ? '2x Gaz' : 'Kalan süre'; }
   const m30 = B.t <= 30; if (h.m30 !== m30) { const was = h.m30; h.m30 = m30; if (m30 && was === false && !B.over) playMusic('battle30'); }   // son 30 sn müziği
-  { const n = !B.over && B.t <= 10 && B.t > 0 ? Math.ceil(B.t) : 0;   // son 10 saniye: dev geri sayım + ses
+  { const n = !B.over && !B.ot && B.t <= 10 && B.t > 0 ? Math.ceil(B.t) : 0;   // son 10 saniye: dev geri sayım + ses
     if (n !== h.cd) { if (n === 10 || (n && !h.cd)) playCountdown(); h.cd = n; const cd = $('cdNum'); cd.textContent = n || ''; cd.classList.remove('go'); if (n) { void cd.offsetWidth; cd.classList.add('go'); } } }
   const tt = Math.max(0, Math.ceil(B.t)); if (h.t !== tt) { h.t = tt; $('timer').textContent = Math.floor(tt / 60) + ':' + String(tt % 60).padStart(2, '0'); }
   if (h.cb !== P.crowns) { h.cb = P.crowns; $('crBn').textContent = P.crowns; }
