@@ -573,14 +573,18 @@
   .card[data-id="log"] img { transform: rotate(-18deg) scale(1.05); }
   .card[data-id="fireball"] img { object-position: center center; transform: scale(.75) rotate(-15deg); }
   .card[data-id="ayva"] img { object-position: center center; }
-  #hand .card.cant::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: var(--fill, 0%); background: linear-gradient(#d985ff55, #b44cff88); border-top: 2px solid #f0c8ff; pointer-events: none; z-index: 2; transition: height .15s linear; }
+  #hand .card .elFill { position: absolute; left: 0; right: 0; bottom: 0; height: var(--fill, 0%); background: linear-gradient(#d985ff55, #b44cff99); border-top: 2px solid #f0c8ff; pointer-events: none; z-index: 2; display: none; transition: height .15s linear; border-radius: 0 0 8px 8px; }
+  #hand .card.cant .elFill { display: block; }
   #hand .card.cant { filter: grayscale(.7) brightness(.75); }
   #champBtn { top: calc(var(--u) * -70) !important; right: auto !important; left: calc(var(--u) * 8); }
   #gasMul { position: absolute; right: calc(var(--u) * 10); top: calc(var(--u) * 92); z-index: 35; pointer-events: none; padding: calc(var(--u) * 2) calc(var(--u) * 8); border-radius: 99px; font-size: calc(var(--u) * 15); color: #fff; background: #0b2357cc; border: 2px solid #9ccc3c; }
   #gasMul.r2 { border-color: #e05ad0; background: #6a1585cc; } #gasMul.r3 { border-color: #ff4141; background: #7a0000cc; } #gasMul.r0 { border-color: #fff; }
   #gasMul.pop { animation: pop .5s; }
 </style>
-<style>#splash{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4vmin;background:radial-gradient(circle at 50% 35%,#2f66d8,#0b2357 75%);transition:opacity .45s}#splash.off{opacity:0;pointer-events:none}#splash img{width:42vmin;max-width:240px;border-radius:22%;box-shadow:0 1.5vmin 0 #0006,0 0 5vmin #36e0e0aa;animation:spl 1.1s ease-in-out infinite alternate}#splash b{font:900 7.5vmin "Lilita One",system-ui,sans-serif;color:#fff;text-shadow:0 .6vmin 0 #0b1a45,0 0 3vmin #000a;letter-spacing:.3vmin}@keyframes spl{to{transform:scale(1.06) rotate(1.5deg)}}</style>
+<style>#splash{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4vmin;background:radial-gradient(circle at 50% 35%,#2f66d8,#0b2357 75%);transition:opacity .45s}#splash.off{opacity:0;pointer-events:none}#splash img{width:42vmin;max-width:240px;border-radius:22%;box-shadow:0 1.5vmin 0 #0006,0 0 5vmin #36e0e0aa;animation:spl 1.1s ease-in-out infinite alternate}#splash b{font:900 7.5vmin "Lilita One",system-ui,sans-serif;color:#fff;text-shadow:0 .6vmin 0 #0b1a45,0 0 3vmin #000a;letter-spacing:.3vmin}@keyframes spl{to{transform:scale(1.06) rotate(1.5deg)}}  .dOpt { position: relative; } .dOpt .dTag { background: #9a1f1f; bottom: 8%; }
+  .dOpt.thinking { animation: dThink .5s ease-in-out infinite alternate; } @keyframes dThink { to { transform: translateY(-5px); filter: brightness(1.25); } }
+  .dOpt.oppPick { transform: scale(1.1); opacity: 1 !important; filter: drop-shadow(0 0 14px #ff3b3b); }
+</style>
 </head>
 <body>
 <div id="splash"><img src="icons/icon-512.png" alt=""><b>Bulgur Royale</b></div>

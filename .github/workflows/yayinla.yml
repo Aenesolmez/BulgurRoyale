@@ -69,10 +69,20 @@ jobs:
           }
           EOF
           npx cap add android
-          # uygulama ikonu: oyunun logosu
+          # uygulama ikonu: oyunun logosu (başarısız olursa varsayılan ikonla devam eder)
+          sudo apt-get install -y -qq imagemagick > /dev/null 2>&1 || true
+          IM=$(command -v magick || command -v convert || true)
           RES=android/app/src/main/res
-          rm -f $RES/mipmap-anydpi-v26/*.xml $RES/mipmap-*/ic_launcher_foreground.png
-          for s in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do d=${s%%:*}; px=${s##*:}; for n in ic_launcher ic_launcher_round; do convert icons/icon-512.png -resize ${px}x${px} $RES/mipmap-$d/$n.png; done; done
+          if [ -n "$IM" ] && [ -f icons/icon-512.png ]; then
+            for s in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
+              d=${s%%:*}; px=${s##*:}
+              for n in ic_launcher ic_launcher_round; do $IM icons/icon-512.png -resize ${px}x${px} $RES/mipmap-$d/$n.png; done
+            done
+            rm -f $RES/mipmap-anydpi-v26/*.xml $RES/mipmap-*/ic_launcher_foreground.png
+            echo "Ikon degistirildi"
+          else
+            echo "ImageMagick yok: varsayilan ikon"
+          fi
           sed -i 's/<activity/<activity android:screenOrientation="portrait"/' android/app/src/main/AndroidManifest.xml
       - name: APK derle
         env:

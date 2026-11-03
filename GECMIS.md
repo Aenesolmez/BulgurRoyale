@@ -52,3 +52,6 @@ Eğlence amaçlı, ticari olmayan Clash Royale tarzı oyun. Tarayıcıda `index.
 
 ## 15
 - Uzatma sonu: kuleler eşit hızda erir, ilk düşen kaybeder (geri sayım yok). Sağ üstte iksir çarpanı. Şampiyon butonu sola. Jojo evrimsiz de yumrukta poz. Müzik geçişleri yumuşak çapraz solma. Lobide parmağı takip eden sekme kaydırma. GitHub deposu + otomatik Pages/APK iş akışı.
+
+## 16
+- Logo (ikon, açılış ekranı, APK ikonu), PWA kurulum, kart dolum çubuğu hatası düzeltildi, zayıf telefonlar için otomatik kalite, kazanma/kaybetme sesi tekrar çalmaz, Üçlü Çekiliş: rakip seçimi görünür + deste özeti.

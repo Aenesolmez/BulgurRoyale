@@ -134,7 +134,8 @@ function refreshSys() {
   document.querySelectorAll('.btnMus').forEach(b => { b.textContent = '🎵'; b.style.opacity = musicOn ? 1 : 0.35; });
   document.querySelectorAll('.btnSnd').forEach(b => { b.textContent = muted ? '🔇' : '🔊'; });
 }
-function audioKick() { if (AC) AC.resume().then(() => { if (musicOn && wantMusic) { musicMode = ''; setMusic(wantMusic); } }).catch(() => {}); }
+// ilk dokunuşta sesi açar; kısa jingle'ları (zafer/yenilgi) ve çalan müziği tekrar başlatmaz
+function audioKick() { if (!AC) return; const was = AC.state; AC.resume().then(() => { if (musicOn && wantMusic && wantMusic !== 'win' && wantMusic !== 'lose') { if (was !== 'running') musicMode = ''; setMusic(wantMusic); } }).catch(() => {}); }
 addEventListener('pointerdown', audioKick); addEventListener('keydown', audioKick);
 document.addEventListener('visibilitychange', () => { if (document.hidden) stopMusic(); else if (musicOn) { musicMode = ''; setMusic(wantMusic); } });
 

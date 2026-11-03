@@ -578,7 +578,7 @@ function drawEmotes(dt) {
 R.time = 0;
 function renderFrame(B, dt) {
   R.time += dt; R.dt = dt;
-  if (dt > 0) { R.fa = (R.fa || 0.016) * 0.97 + dt * 0.03; if (R.fa > 0.026) R.lowFx = true; else if (R.fa < 0.018) R.lowFx = false; }   // yavaş cihazda efektleri otomatik azalt R.skins = B.p && B.p.map(p => p.skin);
+  if (dt > 0) { R.fa = (R.fa || 0.016) * 0.97 + dt * 0.03; if (R.fa > 0.026) R.lowFx = true; else if (R.fa < 0.018 && (typeof QUAL === 'undefined' || QUAL >= 1)) R.lowFx = false; }   // yavaş cihazda efektleri otomatik azalt R.skins = B.p && B.p.map(p => p.skin);
   if (!R.bg) buildBG();
   ctx.clearRect(0, 0, R.VW, R.VH);
   ctx.save();

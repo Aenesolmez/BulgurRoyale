@@ -3,8 +3,9 @@ let GAME = null, last = 0;
 
 
 // ---------- Yerleşim ----------
+let QUAL = (() => { try { return clamp(parseFloat(localStorage.getItem('bulgurQ')) || 1, 0.5, 1); } catch (e) { return 1; } })();   // 1 = tam çözünürlük; zayıf cihazda otomatik düşer
 function layoutAll() {
-  const VW = innerWidth, VH = innerHeight, DPR = Math.min(2, devicePixelRatio || 1);
+  const VW = innerWidth, VH = innerHeight, DPR = Math.max(0.75, Math.min(2, devicePixelRatio || 1) * QUAL);
   const inGame = $('game').classList.contains('active');
   if (!inGame) { const cw = Math.min(VW, Math.max(320, VH * 0.56)); $('app').style.setProperty('--u', cw / 400 + 'px'); document.body.classList.toggle('wide', VW - cw > 170); return; }
   // Üst bilgi arenanın üstüne biner; kral kulesi ve can barı için yukarıda KTOP kare yer ayrılır
@@ -107,7 +108,7 @@ function renderHand() {
   P.hand.forEach((id, i) => {
     const evoS = P.evoIds && P.evoIds.includes(id), cyc = evoCycles(id), ch = evoS ? Math.min(P.evoCharge[id], cyc) : 0, ready = evoS && ch >= cyc;
     const d = el(cardHTML(id, { lvl: 0, champ: id === P.champId, gem: evoS ? (ready ? 'evo on' : 'evo') : '', cls: (ready ? 'evo ' : '') + (GAME.sel === i ? 'sel ' : '') + (P.elixir < BY_ID[id].cost ? 'cant' : ''), pips: evoS && !ready ? [ch, cyc] : null }));
-    d.dataset.i = i;
+    d.dataset.i = i; d.insertAdjacentHTML('beforeend', '<i class="elFill"></i>');
     d.addEventListener('pointerdown', e => startDrag(e, i));
     hand.appendChild(d);
   });
@@ -117,7 +118,7 @@ function renderHand() {
 function refreshHand() {
   const P = handState(), key = P.hand.join() + JSON.stringify(P.evoCharge || {}) + GAME.sel;
   if (key !== GAME.handKey) return renderHand();
-  [...$('hand').children].forEach((d, i) => { const c = BY_ID[P.hand[i]].cost, k = clamp(P.elixir / c, 0, 1); d.classList.toggle('cant', k < 1); d.style.setProperty('--fill', (k * 100).toFixed(1) + '%'); });
+  [...$('hand').children].forEach((d, i) => { const c = BY_ID[P.hand[i]].cost, k = clamp(P.elixir / c, 0, 1); const cd = d.querySelector('.card') || d; cd.classList.toggle('cant', k < 1); cd.style.setProperty('--fill', (k * 100).toFixed(1) + '%'); });
 }
 
 // ---------- Sürükle-bırak / dokun-yerleştir ----------
@@ -247,7 +248,8 @@ function botEmote(kind) {
 // ---------- Döngü ----------
 function frame(now) {
   if (!GAME) return;
-  const dt = clamp((now - last) / 1000, 0, 0.05); last = Math.max(last, now);
+  const raw = (now - last) / 1000, dt = clamp(raw, 0, 0.05); last = Math.max(last, now);
+  { const p = GAME.perf || (GAME.perf = { t: 0, n: 0, warm: 0 }); if (raw < 0.25 && !document.hidden) { p.warm += raw; if (p.warm > 2) { p.t += raw; p.n++; if (p.t >= 3) { const avg = p.t / p.n; if (avg > 0.031 && QUAL > 0.5) { QUAL = Math.max(0.5, +(QUAL - 0.2).toFixed(2)); try { localStorage.setItem('bulgurQ', String(QUAL)); } catch (e) {} R.lowFx = true; layoutAll(); p.warm = 0; } p.t = 0; p.n = 0; } } } }   // 3 sn ortalaması 31 FPS altındaysa kaliteyi düşür
   const B = GAME.mode === 'guest' ? guestView(now) : GAME.B;
   if (GAME.mode !== 'guest' && !GAME.ended && !GAME.draft) {
     stepBattle(B, dt);
@@ -399,11 +401,12 @@ function arenaDraft(kind, oppName, done) {
   const botPick = list => { const need = r => !theirs.some(id => cardRole(BY_ID[id]) === r); return list.slice().sort((a, b) => (val(b) + (need(cardRole(BY_ID[b])) ? 1.5 : 0)) - (val(a) + (need(cardRole(BY_ID[a])) ? 1.5 : 0)))[0]; };
   const rows = () => `<div class="dRow opp"><span class="ts">🔴 ${oppName}</span>${Array.from({ length: 8 }, (_, i) => theirs[i] ? cardHTML(theirs[i], { lvl: 0 }) : '<div class="dEmpty"></div>').join('')}</div>`;
   const meRow = () => `<div class="dRow me"><span class="ts">🔵 Sen</span>${Array.from({ length: 8 }, (_, i) => mine[i] ? cardHTML(mine[i], { lvl: 0 }) : '<div class="dEmpty"></div>').join('')}</div>`;
+  const ready = () => { ov.innerHTML = `<div class="dHead ts">⚔️ Desteler hazır!</div>${rows()}${meRow()}`; sfx('vs'); setTimeout(finish, 2400); };   // iki deste de görünür
   const finish = () => { ov.classList.remove('on'); ov.innerHTML = ''; $('gpanel').classList.remove('drafting'); done(mine, theirs); };
   if (kind === 'triple') {
     const pool = shuffle(CARDS.map(c => c.id));
     const round = () => {
-      if (mine.length >= 8) return setTimeout(finish, 500);
+      if (mine.length >= 8) return setTimeout(ready, 500);
       const opts = pool.splice(0, 3);
       ov.innerHTML = `<div class="dHead ts">🎴 Üçlü Çekiliş <i>${mine.length + 1}/8</i></div>${rows()}<div class="dOpts">${opts.map(id => `<div class="dOpt" data-id="${id}">${cardHTML(id, { lvl: 0 })}</div>`).join('')}</div><div class="dHint ts">Bir kart seç</div>${meRow()}`;
       ov.querySelectorAll('.dOpt').forEach(d => { d.onclick = () => {
@@ -411,7 +414,10 @@ function arenaDraft(kind, oppName, done) {
         const id = d.dataset.id, rest = opts.filter(x => x !== id), bp = botPick(rest), bd = ov.querySelector(`.dOpt[data-id="${bp}"]`);
         d.classList.add('picked');
         flyCard(d, ov.querySelector('.dRow.me .dEmpty'), () => { mine.push(id); d.style.visibility = 'hidden'; });
-        setTimeout(() => { bd && bd.classList.add('oppPick'); flyCard(bd, ov.querySelector('.dRow.opp .dEmpty'), () => { theirs.push(bp); if (bd) bd.style.visibility = 'hidden'; setTimeout(round, 250); }); }, 380);
+        // rakip kalan kartlara bakıp seçer: önce 'düşünür', seçtiği kart RAKİP etiketiyle belirginleşir, sonra slotuna uçar
+        setTimeout(() => { ov.querySelector('.dHint').textContent = oppName + ' seçiyor...'; rest.forEach(x => ov.querySelector(`.dOpt[data-id="${x}"]`)?.classList.add('thinking')); }, 450);
+        setTimeout(() => { ov.querySelectorAll('.dOpt.thinking').forEach(x => x.classList.remove('thinking')); if (bd) { bd.classList.add('oppPick'); bd.insertAdjacentHTML('beforeend', '<b class="dTag">RAKİP</b>'); } sfx('click'); }, 1300);
+        setTimeout(() => { flyCard(bd, ov.querySelector('.dRow.opp .dEmpty'), () => { theirs.push(bp); if (bd) bd.style.visibility = 'hidden'; setTimeout(round, 300); }); }, 2100);
       }; });
     };
     round();
@@ -424,7 +430,7 @@ function arenaDraft(kind, oppName, done) {
       const turn = seq[k];
       ov.innerHTML = `<div class="dHead ts">🃏 Mega Çekiliş <i>${k < 16 ? (turn === 0 ? 'Senin sıran!' : oppName + ' seçiyor...') : 'Hazır!'}</i></div>${rows()}
         <div class="dGrid">${pool.map(id => `<div class="dCell ${owner[id] === 0 ? 'mineP' : owner[id] === 1 ? 'oppP' : ''} ${turn === 0 && owner[id] === undefined && k < 16 ? 'can' : ''}" data-id="${id}">${cardHTML(id, { lvl: 0 })}${owner[id] !== undefined ? `<b class="dTag">${owner[id] === 0 ? 'SEN' : 'RAKİP'}</b>` : ''}</div>`).join('')}</div>${meRow()}`;
-      if (k >= 16) return setTimeout(finish, 700);
+      if (k >= 16) return setTimeout(ready, 700);
       if (turn === 1) { setTimeout(() => { const free = pool.filter(id => owner[id] === undefined), id = botPick(free), cell = ov.querySelector(`.dCell[data-id="${id}"]`); if (cell) cell.classList.add('flying'); flyCard(cell, ov.querySelector('.dRow.opp .dEmpty'), () => { owner[id] = 1; theirs.push(id); k++; draw(); }); }, 650); return; }
       ov.querySelectorAll('.dCell.can').forEach(d => { d.onclick = () => { ov.querySelectorAll('.dCell.can').forEach(x => { x.onclick = null; }); const id = d.dataset.id; d.classList.add('flying'); flyCard(d, ov.querySelector('.dRow.me .dEmpty'), () => { owner[id] = 0; mine.push(id); k++; draw(); }); }; });
     };
