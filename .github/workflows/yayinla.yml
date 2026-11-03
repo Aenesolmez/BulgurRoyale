@@ -55,12 +55,15 @@ jobs:
           npm install --no-audit --no-fund @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
           OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           REPO="${{ github.event.repository.name }}"
+          URL="https://${OWNER}.github.io/${REPO}/"
+          # Pages yayındaysa APK oyunu oradan açar (otomatik güncelleme); değilse içindeki kopyayı kullanır
+          if curl -sfL "${URL}index.html" -o /dev/null; then SERVER="\"server\": { \"url\": \"${URL}\", \"errorPath\": \"index.html\" },"; echo "Uzak adres: $URL"; else SERVER=""; echo "Pages yok: APK icindeki kopya kullanilacak"; fi
           cat > capacitor.config.json <<EOF
           {
             "appId": "com.bulgur.royale",
             "appName": "Bulgur Royale",
             "webDir": "www",
-            "server": { "url": "https://${OWNER}.github.io/${REPO}/", "errorPath": "index.html" },
+            ${SERVER}
             "android": { "backgroundColor": "#0b2357" }
           }
           EOF
