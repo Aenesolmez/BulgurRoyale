@@ -204,21 +204,53 @@ const MUSIC_FILES = { menu: 'menu', battle: 'savas', battle2x: 'savas2x', battle
 const MUSIC_LOOP = { menu: true, battle: true };
 const FILE_VOL = { menu: 0.5, battle: 0.55, battle2x: 0.6, battle30: 0.6, win: 0.65, lose: 0.65 };
 const fileMus = {}; let curFile = null;
-(function probeMusicFiles() {
+// Kullanıcının yüklediği müzikler telefonda (IndexedDB) saklanır; depoya/APK'ya girmez. Yoksa muzik/ klasörüne bakılır.
+const MUS_KEYS = ['menu', 'savas', 'savas2x', 'savas30', 'zafer', 'yenilgi', 'geri'];
+const musDB = () => new Promise((res, rej) => { try { const r = indexedDB.open('bulgurMusic', 1); r.onupgradeneeded = () => r.result.createObjectStore('f'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); } catch (e) { rej(e); } });
+async function musGetAll() { try { const db = await musDB(); return await new Promise(res => { const o = {}, rq = db.transaction('f').objectStore('f').openCursor(); rq.onsuccess = () => { const c = rq.result; if (c) { o[c.key] = c.value; c.continue(); } else res(o); }; rq.onerror = () => res({}); }); } catch (e) { return {}; } }
+async function musPut(k, blob) { const db = await musDB(); return new Promise((res, rej) => { const tx = db.transaction('f', 'readwrite'); tx.objectStore('f').put(blob, k); tx.oncomplete = res; tx.onerror = () => rej(tx.error); }); }
+async function musClear() { try { const db = await musDB(); await new Promise(res => { const tx = db.transaction('f', 'readwrite'); tx.objectStore('f').clear(); tx.oncomplete = res; tx.onerror = res; }); } catch (e) {} }
+// dosya adından hangi müzik olduğunu tahmin et (Türkçe ya da İngilizce adlar)
+function musKeyOf(name) {
+  const n = name.toLowerCase().replace(/\.[a-z0-9]+$/, '');
+  if (/countdown|geri|10 ?sec/.test(n)) return 'geri';
+  if (/savas ?30|30 ?sec|\b30\b/.test(n)) return 'savas30';
+  if (/savas ?2x|60 ?sec|\b60\b|2x/.test(n)) return 'savas2x';
+  if (/savas|battle|savaş/.test(n)) return 'savas';
+  if (/menu|menü|lobby/.test(n)) return 'menu';
+  if (/zafer|win|victory/.test(n)) return 'zafer';
+  if (/yenilgi|lose|defeat/.test(n)) return 'yenilgi';
+  return null;
+}
+async function importMusic(files) {
+  const ok = [], fail = [];
+  for (const f of files) { const k = musKeyOf(f.name); if (!k) { fail.push(f.name); continue; } try { await musPut(k, f); ok.push(k); } catch (e) { fail.push(f.name); } }
+  reprobeMusic(); return { ok, fail };
+}
+let cdUrl = null, mine = {};
+function probeMusicFiles(blobs) {
+  mine = {}; for (const k of Object.keys(blobs || {})) mine[k] = true;
+  cdUrl = blobs && blobs.geri ? URL.createObjectURL(blobs.geri) : null; cdAud = null;
   for (const [mode, name] of Object.entries(MUSIC_FILES)) {
-    const exts = ['mp3', 'ogg', 'm4a', 'wav']; let i = 0;
+    const exts = ['mp3', 'ogg', 'm4a', 'wav'], cand = (blobs && blobs[name] ? [URL.createObjectURL(blobs[name])] : []).concat(exts.map(e => 'muzik/' + name + '.' + e)); let i = 0;
     fileMus[mode] = 'probing';
     const tryNext = () => {
-      if (i >= exts.length) { fileMus[mode] = null; return; }
+      if (i >= cand.length) { fileMus[mode] = null; return; }
       const a = new Audio(); a.preload = 'auto'; a.loop = !!MUSIC_LOOP[mode];
       a.oncanplay = () => { a.oncanplay = null; if (fileMus[mode] !== 'probing') return; fileMus[mode] = a; if (wantMusic === mode || (mode === 'battle' && /^battle/.test(wantMusic))) { musicMode = ''; setMusic(wantMusic); } };
       a.onerror = () => { i++; tryNext(); };
       a.onended = () => { if (curFile === a && /^battle(2x|30)$/.test(musicMode)) { curFile = null; const m = musicMode; setMusic('battle'); musicMode = m; } };   // geri sayım parçası bitince savaş müziğine dön
-      a.src = 'muzik/' + name + '.' + exts[i];
+      a.src = cand[i];
     };
     tryNext();
   }
-})();
+}
+function reprobeMusic() {
+  if (curFile) { try { curFile.pause(); } catch (e) {} curFile = null; }
+  for (const k of Object.keys(fileMus)) delete fileMus[k]; musicMode = '';
+  musGetAll().then(probeMusicFiles);
+}
+musGetAll().then(probeMusicFiles);
 const hasFile = mode => fileMus[mode] && fileMus[mode] !== 'probing';
 function fileFor(mode) { if (hasFile(mode)) return fileMus[mode]; if (mode === 'battle2x' && hasFile('battle')) return fileMus.battle; return null; }
 function fadeTo(a, vol, ms, then) {
@@ -248,5 +280,5 @@ applyVolumes();
 
 // son 10 saniye geri sayım sesi (muzik/geri.mp3)
 let cdAud = null;
-function playCountdown() { try { if (!cdAud) cdAud = new Audio('muzik/geri.mp3'); cdAud.volume = clamp(VOL.main * VOL.sfx, 0, 1); cdAud.currentTime = 0; if (!muted) cdAud.play().catch(() => {}); } catch (e) {} }
+function playCountdown() { try { if (!cdAud) cdAud = new Audio(cdUrl || 'muzik/geri.mp3'); cdAud.volume = clamp(VOL.main * VOL.sfx, 0, 1); cdAud.currentTime = 0; if (!muted) cdAud.play().catch(() => {}); } catch (e) {} }
 function stopCountdown() { if (cdAud) { cdAud.pause(); cdAud.currentTime = 0; } }

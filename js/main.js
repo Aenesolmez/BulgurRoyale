@@ -183,10 +183,13 @@ addEventListener('keydown', e => {
   if (e.key === 'e' || e.key === 'E') $('emoMenu').classList.toggle('on');
   if (e.key === 'Escape') surrender();
 });
-function musicFilesHTML() { return `<div class="muted" style="font-size:12px">🎵 Müzik dosyaları (muzik/ klasörü): ${Object.entries(MUSIC_FILES).map(([m, n]) => `${hasFile(m) ? '✔' : '✖'} ${n}`).join(' · ')}</div>`; }
+function musicFilesHTML() { return `<div class="muted" style="font-size:12px">🎵 Müzikler: ${Object.entries(MUSIC_FILES).map(([m, n]) => `${hasFile(m) ? '✔' : '✖'} ${n}`).join(' · ')} · ${mine.geri ? '✔' : '✖'} geri sayım</div><div class="sysRow"><button class="btn sm" id="musUp">📂 Müziklerimi yükle</button><button class="btn sm red" id="musClr">Sıfırla</button></div><div class="muted" style="font-size:11px">Kendi müzik dosyalarını seç (Menu, Battle, 60 sn, 30 sn, Countdown, Zafer, Yenilgi); telefonda kalır, kimseyle paylaşılmaz.</div><input type="file" id="musIn" accept="audio/*" multiple style="display:none">`; }
 function volRowHTML() { return [['main', '🔊 Genel ses'], ['music', '🎵 Müzik'], ['sfx', '💥 Efektler']].map(([k, t]) => `<div class="volRow ts"><span>${t}</span><input type="range" min="0" max="100" step="1" value="${Math.round(VOL[k] * 100)}" data-vol="${k}"><b>${Math.round(VOL[k] * 100)}</b></div>`).join(''); }
 function sysRowHTML() { return volRowHTML() + musicFilesHTML() + `<div class="sysRow"><button class="btn blue" id="sMus">🎵 Müzik: ${musicOn ? 'Açık' : 'Kapalı'}</button><button class="btn blue" id="sSnd">${muted ? '🔇 Ses: Kapalı' : '🔊 Ses: Açık'}</button></div><div class="sysRow"><button class="btn blue" id="sFull">⛶ Tam ekran</button></div>`; }
 function bindSysRow(again) {
+  $('musUp').onclick = () => $('musIn').click();
+  $('musIn').onchange = async e => { const r = await importMusic([...e.target.files]); toast(r.ok.length ? '🎵 ' + r.ok.length + ' müzik yüklendi' + (r.fail.length ? ' · tanınmayan: ' + r.fail.join(', ') : '') : 'Dosya adı tanınmadı (menu, battle, 60, 30, countdown...)', 3200); setTimeout(again, 600); };
+  $('musClr').onclick = async () => { await musClear(); reprobeMusic(); toast('Yüklenen müzikler silindi'); setTimeout(again, 400); };
   $('sMus').onclick = () => { setMusicOn(!musicOn); again(); };
   $('sSnd').onclick = () => { muted = !muted; try { localStorage.setItem('bulgurSnd', muted ? '0' : '1'); } catch (e) {} refreshSys(); again(); };
   $('sFull').onclick = () => { toggleFull(); closeModal(); };
