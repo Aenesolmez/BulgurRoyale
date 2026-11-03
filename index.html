@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="tr">
 <head>
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icons/icon-192.png"><link rel="apple-touch-icon" href="icons/icon-192.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Bulgur Royale</title>
@@ -663,5 +664,6 @@
 <script src="js/net.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/main.js"></script>
+<script>if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(function () {});</script>
 </body>
 </html>
