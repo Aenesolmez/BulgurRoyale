@@ -236,11 +236,13 @@ function probeMusicFiles(blobs) {
     fileMus[mode] = 'probing';
     const tryNext = () => {
       if (i >= cand.length) { fileMus[mode] = null; return; }
-      const a = new Audio(); a.preload = 'auto'; a.loop = !!MUSIC_LOOP[mode];
-      a.oncanplay = () => { a.oncanplay = null; if (fileMus[mode] !== 'probing') return; fileMus[mode] = a; if (wantMusic === mode || (mode === 'battle' && /^battle/.test(wantMusic))) { musicMode = ''; setMusic(wantMusic); } };
-      a.onerror = () => { i++; tryNext(); };
+      const url = cand[i], a = new Audio(); a.preload = 'auto'; a.loop = !!MUSIC_LOOP[mode];
+      const ok = () => { a.oncanplay = a.onloadedmetadata = a.onloadeddata = null; if (fileMus[mode] !== 'probing') return; fileMus[mode] = a; if (wantMusic === mode || (mode === 'battle' && /^battle/.test(wantMusic))) { musicMode = ''; setMusic(wantMusic); } };
       a.onended = () => { if (curFile === a && /^battle(2x|30)$/.test(musicMode)) { curFile = null; const m = musicMode; setMusic('battle'); musicMode = m; } };   // geri sayım parçası bitince savaş müziğine dön
-      a.src = cand[i];
+      const start = () => { a.oncanplay = ok; a.onloadedmetadata = ok; a.onloadeddata = ok; a.onerror = () => { i++; tryNext(); }; a.src = url; try { a.load(); } catch (e) {} };
+      // telefonlarda tarayıcı çalmadan 'hazır' demez: dosyanın varlığını önce istekle sına (http/https'te), sonra kabul et
+      if (/^https?:/.test(location.protocol) && url.indexOf('blob:') !== 0) fetch(url, { headers: { Range: 'bytes=0-0' }, cache: 'no-store' }).then(r => { if (r.ok) start(); else { i++; tryNext(); } }).catch(() => { i++; tryNext(); });
+      else start();
     };
     tryNext();
   }
