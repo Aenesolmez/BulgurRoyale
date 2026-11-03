@@ -55,3 +55,8 @@ Eğlence amaçlı, ticari olmayan Clash Royale tarzı oyun. Tarayıcıda `index.
 
 ## 16
 - Logo (ikon, açılış ekranı, APK ikonu), PWA kurulum, kart dolum çubuğu hatası düzeltildi, zayıf telefonlar için otomatik kalite, kazanma/kaybetme sesi tekrar çalmaz, Üçlü Çekiliş: rakip seçimi görünür + deste özeti.
+
+## 17
+- Güncelleme ekranı: her yayında sürüm damgası (version.json), açık oyun yeni sürümü fark edince "Güncelleniyor" ekranı + otomatik yenileme (maçtaysa maç bitince), sonra "Güncellendi" bildirimi.
+- Ayarlardan kendi müzik dosyalarını yükleme (telefonda saklanır; telifli müzikler depoya/APK'ya konmaz).
+- Logo: ana ekran ve APK ikonu, açılış ekranı. Zafer sesi tekrarı, kart dolum çubuğu, otomatik kalite düşürme, Üçlü Çekiliş görünürlüğü.

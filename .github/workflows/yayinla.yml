@@ -27,10 +27,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Site dosyalarini topla
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |
           mkdir -p _site
           cp -r index.html cards.js js bulgurs icons manifest.webmanifest sw.js _site/
           touch _site/.nojekyll
+          BUILD=$(echo "${{ github.sha }}" | cut -c1-8)
+          sed -i "s/__BUILD__/$BUILD/" _site/index.html
+          MSG=$(printf "%s" "$COMMIT_MSG" | head -1)
+          jq -n --arg b "$BUILD" --arg m "$MSG" '{build:$b,msg:$m}' > _site/version.json
+          cat _site/version.json
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

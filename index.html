@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="tr">
 <head>
-<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icons/icon-192.png"><link rel="apple-touch-icon" href="icons/icon-192.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Bulgur Royale"><meta name="application-name" content="Bulgur Royale"><meta name="theme-color" content="#0b2357">
+<script>window.BUILD="__BUILD__";</script><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icons/icon-192.png"><link rel="apple-touch-icon" href="icons/icon-192.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Bulgur Royale"><meta name="application-name" content="Bulgur Royale"><meta name="theme-color" content="#0b2357">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Bulgur Royale</title>
@@ -585,8 +585,18 @@
   .dOpt.thinking { animation: dThink .5s ease-in-out infinite alternate; } @keyframes dThink { to { transform: translateY(-5px); filter: brightness(1.25); } }
   .dOpt.oppPick { transform: scale(1.1); opacity: 1 !important; filter: drop-shadow(0 0 14px #ff3b3b); }
 </style>
+<style>
+#updScr{position:fixed;inset:0;z-index:100000;display:none;flex-direction:column;align-items:center;justify-content:center;gap:3vmin;background:radial-gradient(circle at 50% 35%,#2f66d8,#0b2357 75%);color:#fff;text-align:center;padding:0 8vmin}
+#updScr.on{display:flex;animation:updIn .3s ease-out}@keyframes updIn{from{opacity:0}}
+#updScr img{width:30vmin;max-width:170px;border-radius:22%;box-shadow:0 1.2vmin 0 #0006;animation:updSpin 1.4s ease-in-out infinite alternate}@keyframes updSpin{to{transform:rotate(6deg) scale(1.06)}}
+#updScr b{font:900 6.5vmin "Lilita One",system-ui,sans-serif;text-shadow:0 .5vmin 0 #0b1a45}
+#updScr i{font:600 3.6vmin system-ui,sans-serif;font-style:normal;color:#cfe0ff;max-width:80vmin}
+#updBar{width:60vmin;max-width:340px;height:3.2vmin;border-radius:99px;background:#0b1a45;border:.5vmin solid #fff;overflow:hidden}#updBar div{height:100%;width:0;background:linear-gradient(#b6ff6a,#4fd61f);transition:width .25s}
+#updHint{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 70px);transform:translateX(-50%);z-index:99998;background:#0b2357ee;border:2px solid #9ccc3c;color:#fff;border-radius:99px;padding:6px 14px;font:600 13px system-ui,sans-serif;display:none}#updHint.on{display:block}
+</style>
 </head>
 <body>
+<div id="updScr"><img src="icons/icon-512.png" alt=""><b>Güncelleniyor...</b><div id="updBar"><div></div></div><i id="updMsg"></i></div><div id="updHint">⬇ Yeni sürüm hazır: maç bitince güncellenecek</div>
 <div id="splash"><img src="icons/icon-512.png" alt=""><b>Bulgur Royale</b></div>
 <div id="app">
 
@@ -672,5 +682,31 @@
 <script src="js/main.js"></script>
 <script>if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(function () {});</script>
 <script>(function(){var t0=Date.now();function hide(){var s=document.getElementById("splash");if(!s)return;s.classList.add("off");setTimeout(function(){s.remove()},600)}addEventListener("load",function(){setTimeout(hide,Math.max(0,1100-(Date.now()-t0)))});setTimeout(hide,6000)})();</script>
+<script>
+// Otomatik güncelleme: sunucudaki sürüm (version.json) açık olandan farklıysa güncelleme ekranı gösterip yenilenir. Maçta beklenir.
+(function () {
+  var B = window.BUILD || '', dev = !/^https?:/.test(location.protocol) || B.indexOf('__') === 0, pending = null, lastCheck = 0;
+  function $(i) { return document.getElementById(i); }
+  function inMatch() { try { return typeof GAME !== 'undefined' && GAME && !GAME.ended; } catch (e) { return false; } }
+  window.applyUpdate = function (info, reload) {
+    var s = $('updScr'); if (!s) return; $('updMsg').textContent = info.msg ? 'Yenilik: ' + info.msg : ''; s.classList.add('on'); $('updHint').classList.remove('on');
+    var bar = s.querySelector('#updBar div'); bar.style.width = '12%'; var p = 12, t = setInterval(function () { p = Math.min(92, p + 9); bar.style.width = p + '%'; }, 180);
+    try { localStorage.setItem('bulgurUpdMsg', info.msg || ''); } catch (e) {}
+    var clear = (window.caches && caches.keys) ? caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }) : Promise.resolve();
+    var unreg = (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) ? navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }) : Promise.resolve();
+    Promise.all([clear, unreg]).catch(function () {}).then(function () { setTimeout(function () { clearInterval(t); bar.style.width = '100%'; if (reload !== false) setTimeout(function () { location.replace(location.pathname + '?u=' + encodeURIComponent(info.build)); }, 350); }, 1300); });
+  };
+  window.checkUpdate = function () {
+    if (pending) return tryApply();
+    return fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.build && j.build !== B) { pending = j; tryApply(); } }).catch(function () {});
+  };
+  function tryApply() { if (!pending) return; if (inMatch()) { $('updHint').classList.add('on'); return; } var p = pending; pending = null; window.applyUpdate(p); }
+  if (dev) return;
+  try { var prev = localStorage.getItem('bulgurBuild'); if (prev && prev !== B) { var m = localStorage.getItem('bulgurUpdMsg'); setTimeout(function () { if (typeof toast === 'function') toast('✨ Güncellendi!' + (m ? ' ' + m : ''), 4200); }, 2600); } localStorage.setItem('bulgurBuild', B); } catch (e) {}
+  setTimeout(window.checkUpdate, 1500);
+  setInterval(function () { if (!document.hidden) window.checkUpdate(); }, 60000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && Date.now() - lastCheck > 15000) { lastCheck = Date.now(); window.checkUpdate(); } });
+})();
+</script>
 </body>
 </html>
