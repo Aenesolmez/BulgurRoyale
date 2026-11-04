@@ -722,21 +722,28 @@ function renderRoad() {
 // ---------- Arkadaşla oyna ----------
 function renderSocial() {
   const T = $('tab-social');
-  T.innerHTML = `<div class="panel ts"><div class="ttl">👥 Arkadaşla Oyna</div><div class="muted">Sunucu yok: kodu kopyalayıp arkadaşına (WhatsApp vb.) gönder, onun verdiği kodu buraya yapıştır. Kupa değişmez.</div></div>
-    <div class="panel ts"><div class="ttl">1) Oda kur</div><button class="btn green sm" id="nHost">Oda Kur</button>
-      <div id="hostBox" style="display:none;margin-top:8px"><div class="muted">Bu kodu arkadaşına gönder:</div><textarea id="hostCode" readonly></textarea><button class="btn blue sm" id="copyHost">Kopyala</button>
-      <div class="muted" style="margin-top:8px">Arkadaşının cevap kodu:</div><textarea id="ansCode"></textarea><button class="btn sm" id="nAccept">Bağlan</button></div></div>
-    <div class="panel ts"><div class="ttl">2) Odaya katıl</div><div class="muted">Arkadaşının oda kodu:</div><textarea id="joinCode"></textarea><button class="btn green sm" id="nJoin">Katıl</button>
-      <div id="joinBox" style="display:none;margin-top:8px"><div class="muted">Bu cevap kodunu arkadaşına gönder:</div><textarea id="replyCode" readonly></textarea><button class="btn blue sm" id="copyReply">Kopyala</button></div></div>
-    <div class="panel ts"><div class="ttl">Durum: <span id="netSt">${NET.open ? 'Bağlı ✔' : 'Bağlı değil'}</span></div><div id="netInfo" class="muted"></div><button class="btn sm ${NET.open && NET.role === 'host' && NET.peer ? '' : 'off'}" id="nStart">⚔️ Maçı Başlat</button></div>`;
+  T.innerHTML = `<div class="panel ts"><div class="ttl">👥 Arkadaşla Oyna</div><div class="muted">Bir arkadaşın oda kursun, 5 harflik kodu söylesin, sen yazıp katıl. Kupa değişmez.</div></div>
+    <div class="panel ts"><div class="ttl">Oda Kur</div><button class="btn green sm" id="nHost">Oda Kur</button>
+      <div id="hostBox" style="display:none;margin-top:8px"><div class="muted">Bu kodu arkadaşına söyle:</div><div id="roomCode" style="font:34px var(--f);letter-spacing:6px;text-align:center;margin:6px 0">-----</div><button class="btn blue sm" id="copyHost">Kopyala</button></div></div>
+    <div class="panel ts"><div class="ttl">Odaya Katıl</div><input id="joinCode" maxlength="5" placeholder="KOD" autocapitalize="characters" style="width:100%;font:26px var(--f);letter-spacing:6px;text-align:center;text-transform:uppercase;padding:8px;border-radius:8px;border:2px solid #000;margin:6px 0"><button class="btn green sm" id="nJoin">Katıl</button></div>
+    <div class="panel ts"><div class="ttl">Durum: <span id="netSt">${NET.open ? 'Bağlı ✔' : 'Bağlı değil'}</span></div><div id="netInfo" class="muted"></div><button class="btn sm ${NET.open && NET.role === 'host' && NET.peer ? '' : 'off'}" id="nStart">⚔️ Maçı Başlat</button></div>
+    <div class="panel ts"><details><summary class="muted">Gelişmiş: internetsiz kod değişimi (yedek)</summary>
+      <div class="ttl" style="margin-top:8px">1) Oda kur</div><button class="btn green sm" id="oHost">Uzun Kod Üret</button>
+      <div id="oBox" style="display:none;margin-top:8px"><div class="muted">Bu kodu arkadaşına gönder:</div><textarea id="hostCode" readonly></textarea><button class="btn blue sm" id="copyOld">Kopyala</button>
+      <div class="muted" style="margin-top:8px">Arkadaşının cevap kodu:</div><textarea id="ansCode"></textarea><button class="btn sm" id="nAccept">Bağlan</button></div>
+      <div class="ttl" style="margin-top:8px">2) Odaya katıl</div><textarea id="oJoinCode"></textarea><button class="btn green sm" id="oJoin">Katıl</button>
+      <div id="joinBox" style="display:none;margin-top:8px"><div class="muted">Bu cevap kodunu arkadaşına gönder:</div><textarea id="replyCode" readonly></textarea><button class="btn blue sm" id="copyReply">Kopyala</button></div></details></div>`;
   const busy = (b, t) => { b.disabled = true; b.textContent = t; };
-  $('nHost').onclick = async () => { busy($('nHost'), 'Hazırlanıyor...'); try { const code = await netHost(); $('hostCode').value = code; $('hostBox').style.display = ''; $('nHost').textContent = 'Oda hazır'; } catch (e) { toast('Oda kurulamadı: ' + e.message); } };
-  $('copyHost').onclick = () => copyText($('hostCode').value);
-  $('nAccept').onclick = async () => { try { await netHostAccept($('ansCode').value); $('netSt').textContent = 'Bağlanıyor...'; } catch (e) { toast('Kod hatalı: ' + e.message); } };
-  $('nJoin').onclick = async () => { busy($('nJoin'), 'Hazırlanıyor...'); try { const code = await netJoin($('joinCode').value); $('replyCode').value = code; $('joinBox').style.display = ''; $('nJoin').textContent = 'Cevap hazır'; } catch (e) { $('nJoin').disabled = false; $('nJoin').textContent = 'Katıl'; toast('Kod hatalı: ' + e.message); } };
-  $('copyReply').onclick = () => copyText($('replyCode').value);
+  $('nHost').onclick = async () => { busy($('nHost'), 'Hazırlanıyor...'); try { const code = await netHostRoom(); $('roomCode').textContent = code; $('hostBox').style.display = ''; $('nHost').textContent = 'Oda hazır, arkadaşını bekliyor'; $('copyHost').onclick = () => copyText(code); } catch (e) { $('nHost').disabled = false; $('nHost').textContent = 'Oda Kur'; toast('Oda kurulamadı: ' + e.message); } };
+  $('nJoin').onclick = async () => { const c = $('joinCode').value.trim(); if (c.length < 5) { sfx('nope'); toast('5 harflik kodu yaz'); return; } busy($('nJoin'), 'Bağlanıyor...'); try { await netJoinRoom(c); $('nJoin').textContent = 'Bağlandı ✔'; } catch (e) { $('nJoin').disabled = false; $('nJoin').textContent = 'Katıl'; toast(e.message); } };
   $('nStart').onclick = () => { if (NET.open && NET.role === 'host' && NET.peer) hostStartOnline(); else { sfx('nope'); toast('Önce bağlantı kurun'); } };
   if (NET.peer) $('netInfo').textContent = `Rakip: ${NET.peer.name} · 🏆 ${NET.peer.tr} · Kral ${NET.peer.kl}`;
+  // eski yöntem (yedek)
+  $('oHost').onclick = async () => { busy($('oHost'), 'Hazırlanıyor...'); try { const code = await netHost(); $('hostCode').value = code; $('oBox').style.display = ''; $('oHost').textContent = 'Kod hazır'; } catch (e) { toast('Oda kurulamadı: ' + e.message); } };
+  $('copyOld').onclick = () => copyText($('hostCode').value);
+  $('nAccept').onclick = async () => { try { await netHostAccept($('ansCode').value); $('netSt').textContent = 'Bağlanıyor...'; } catch (e) { toast('Kod hatalı: ' + e.message); } };
+  $('oJoin').onclick = async () => { busy($('oJoin'), 'Hazırlanıyor...'); try { const code = await netJoin($('oJoinCode').value); $('replyCode').value = code; $('joinBox').style.display = ''; $('oJoin').textContent = 'Cevap hazır'; } catch (e) { $('oJoin').disabled = false; $('oJoin').textContent = 'Katıl'; toast('Kod hatalı: ' + e.message); } };
+  $('copyReply').onclick = () => copyText($('replyCode').value);
 }
 function copyText(t) { try { navigator.clipboard.writeText(t).then(() => toast('Kopyalandı')); } catch (e) { toast('Kopyalanamadı, elle seç'); } }
 

@@ -55,3 +55,40 @@ async function netJoin(code) {
   return packSDP(pc.localDescription);
 }
 function netSend(m) { if (NET.dc && NET.open) { try { NET.dc.send(JSON.stringify(m)); } catch (e) {} } }
+
+// ================= Kısa oda kodu (PeerJS genel aracı sunucusu): sadece 5 harflik kod =================
+// Sadece eşleşme için aracı kullanılır; oyun verisi yine doğrudan telefonlar arasında (WebRTC) akar.
+function netReset2() { netReset(); try { NET.peerObj && NET.peerObj.destroy(); } catch (e) {} NET.peerObj = null; }
+function setupConn(conn) {
+  NET.dc = { send: s => conn.send(s), close: () => conn.close() };
+  const open = () => { NET.open = true; NET.status = 'bağlandı'; NET.on && NET.on({ t: '_open' }); };
+  conn.open ? open() : conn.on('open', open);
+  conn.on('close', () => { NET.open = false; NET.status = 'koptu'; NET.on && NET.on({ t: '_close' }); });
+  conn.on('data', d => { let m = d; if (typeof d === 'string') { try { m = JSON.parse(d); } catch (e) { return; } } NET.on && NET.on(m); });
+}
+function needPeer() { if (typeof Peer === 'undefined') throw new Error('İnternet gerekli (PeerJS yüklenemedi)'); }
+function netHostRoom() {
+  netReset2(); needPeer(); NET.role = 'host';
+  const AL = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  return new Promise((res, rej) => {
+    let tries = 0;
+    const make = () => {
+      let code = ''; for (let i = 0; i < 5; i++) code += AL[Math.floor(Math.random() * AL.length)];
+      const p = new Peer('bulgur-' + code); NET.peerObj = p;
+      p.on('open', () => res(code));
+      p.on('connection', c => { if (NET.dc) { c.close(); return; } setupConn(c); });
+      p.on('error', e => { if (e.type === 'unavailable-id' && ++tries < 5) { try { p.destroy(); } catch (x) {} make(); } else rej(new Error(e.type || 'bağlantı')); });
+    };
+    make();
+  });
+}
+function netJoinRoom(code) {
+  netReset2(); needPeer(); NET.role = 'guest';
+  code = String(code).trim().toUpperCase();
+  return new Promise((res, rej) => {
+    const p = new Peer(); NET.peerObj = p;
+    const to = setTimeout(() => rej(new Error('Oda bulunamadı')), 12000);
+    p.on('open', () => { const c = p.connect('bulgur-' + code, { reliable: true }); setupConn(c); c.on('open', () => { clearTimeout(to); res(); }); });
+    p.on('error', e => { clearTimeout(to); rej(new Error(e.type === 'peer-unavailable' ? 'Oda bulunamadı' : (e.type || 'bağlantı'))); });
+  });
+}
